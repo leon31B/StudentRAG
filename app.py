@@ -43,16 +43,18 @@ class EmbedTestRequest(BaseModel):
     text: str
 
 
+@app.get("/", response_class=HTMLResponse)
 @app.get("/landing", response_class=HTMLResponse)
 async def get_landing():
-    """Serves the StudentRAG.com landing page."""
+    """Serves the StudentRAG.com landing page as the primary entrance."""
     landing_file = BASE_DIR / "landing page" / "index.html"
     if landing_file.exists():
         return HTMLResponse(landing_file.read_text(encoding="utf-8"))
     return HTMLResponse("<h1>Landing page not found</h1>", status_code=404)
 
 
-@app.get("/", response_class=HTMLResponse)
+@app.get("/app", response_class=HTMLResponse)
+@app.get("/chat", response_class=HTMLResponse)
 async def get_dashboard():
     """Serves the rich modern web dashboard."""
     stats = pipeline.get_index_stats()
@@ -822,8 +824,8 @@ async def get_dashboard():
             <h1>Welcome to <span>StudentRAG.com</span></h1>
         </div>
         <div class="header-actions">
-            <a href="/landing" class="theme-toggle-btn" style="text-decoration: none;" title="View Landing Page">
-                <span>🚀</span> <span>Landing Page</span>
+            <a href="/" class="theme-toggle-btn" style="text-decoration: none;" title="Back to Landing Page">
+                <span>←</span> <span>Landing Page</span>
             </a>
             <button class="theme-toggle-btn" onclick="toggleTheme()" title="Toggle Claymorphic / Dark mode">
                 <span id="theme-icon">🌿</span> <span id="theme-label">Pastel Clay</span>
