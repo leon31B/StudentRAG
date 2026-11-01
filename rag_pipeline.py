@@ -27,6 +27,30 @@ class MissingAPIKeyError(Exception):
     pass
 
 
+def clean_llm_output(text: str) -> str:
+    """Removes thinking process, reasoning tags, and scratchpad commentary."""
+    if not text:
+        return ""
+    import re
+
+    # 1. Remove XML-style <think>...</think> tags
+    text = re.sub(r'<think>.*?</think>', '', text, flags=re.DOTALL | re.IGNORECASE)
+
+    # 2. If model outputs explicit thinking process block
+    if "thinking process" in text.lower():
+        # Look for explicit transition to the answer or draft
+        parts = re.split(r'\n+(?:Final Answer|Answer|Response|Intro(?:ductory paragraph)?):\s*', text, flags=re.IGNORECASE)
+        if len(parts) > 1:
+            text = parts[-1]
+        else:
+            # Strip lines that belong to thinking process (Analyze, Check, etc.)
+            text = re.sub(r"^Here's a thinking process:.*?(?=\n\n(?:[A-Z•#]|\*))", "", text, flags=re.DOTALL | re.IGNORECASE)
+
+    # 3. Strip any robotic prefixes
+    text = re.sub(r'^(?:Here is the answer|Here is the response|Here is a summary):\s*', '', text, flags=re.IGNORECASE)
+    return text.strip()
+
+
 class NVIDIARagPipeline:
     """
     Complete RAG Pipeline powered by NVIDIA Nemotron-3.5-Embed-1B
@@ -240,17 +264,19 @@ class NVIDIARagPipeline:
 
         # Prompt template: ChatGPT-style clean paragraph & structured bullet points
         system_prompt = (
-            "You are a helpful, expert AI assistant. Answer the user's question clearly, "
+            "You are a helpful, expert AI research assistant. Answer the user's question clearly, "
             "authoritatively, and elegantly, strictly grounded in the provided context.\n\n"
-            "Formatting & Tone Guidelines (ChatGPT-style):\n"
-            "1. Lead with a clear, concise introductory paragraph directly answering the question. "
-            "Never start with robotic filler like 'Based on the provided context...' or 'According to Source 1...'.\n"
+            "CRITICAL INSTRUCTIONS:\n"
+            "- Output ONLY your final, polished response directly to the user.\n"
+            "- NEVER output any internal thinking process, scratchpad notes, analysis steps, or phrases like 'Here\'s a thinking process:'.\n"
+            "- Begin directly with the answer.\n\n"
+            "FORMATTING GUIDELINES:\n"
+            "1. Lead with a clear, concise introductory paragraph directly answering the question.\n"
             "2. Break down the key details into clean, structured bullet points with bold key headings "
             "(e.g., • **Key Achievement**: Detailed explanation).\n"
-            "3. If applicable, conclude with a brief, helpful summary sentence.\n"
-            "4. Do NOT output robotic negative meta-statements (e.g., avoid 'No other facts were mentioned in the remaining sources').\n"
-            "5. Cite references unobtrusively using [Source X] at the end of relevant points.\n"
-            "6. If the context does not contain enough information, explain what is known and state what is not covered naturally.\n\n"
+            "3. Cite references unobtrusively using [Source X] at the end of relevant points.\n"
+            "4. Conclude with a brief, helpful summary sentence.\n"
+            "5. Do NOT output robotic negative meta-statements (e.g., avoid 'No other facts were mentioned').\n\n"
             "Context:\n{context}"
         )
 
@@ -260,19 +286,21 @@ class NVIDIARagPipeline:
         ])
 
         chain = prompt | self.llm | StrOutputParser()
-        answer = chain.invoke({"context": formatted_context, "question": query})
+        raw_answer = chain.invoke({"context": formatted_context, "question": query})
 
         # Ensure answer is string and not empty
-        if not answer or not str(answer).strip():
+        if not raw_answer or not str(raw_answer).strip():
             raw_msg = self.llm.invoke(prompt.format_messages(context=formatted_context, question=query))
             if hasattr(raw_msg, "content") and raw_msg.content and str(raw_msg.content).strip():
-                answer = str(raw_msg.content).strip()
+                raw_answer = str(raw_msg.content).strip()
             elif hasattr(raw_msg, "additional_kwargs") and raw_msg.additional_kwargs.get("reasoning_content"):
-                answer = str(raw_msg.additional_kwargs.get("reasoning_content")).strip()
+                raw_answer = str(raw_msg.additional_kwargs.get("reasoning_content")).strip()
+
+        answer = clean_llm_output(str(raw_answer or ""))
 
         return {
             "query": query,
-            "answer": str(answer).strip(),
+            "answer": answer,
             "sources": sources,
             "embedding_model": self.embedding_model_name,
             "llm_model": self.llm_model_name,

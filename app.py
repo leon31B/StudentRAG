@@ -547,34 +547,47 @@ async def get_dashboard():
         }}
 
         .sources-card {{
-            margin-top: 1rem;
-            padding-top: 0.85rem;
-            border-top: 1px dashed rgba(140, 155, 145, 0.3);
-            font-size: 0.85rem;
+            margin-top: 1.25rem;
+            padding: 0.9rem 1.15rem;
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 18px;
+            box-shadow: var(--glass-shadow);
         }}
 
         .sources-title {{
             font-weight: 700;
             color: var(--clay-sage);
-            margin-bottom: 0.45rem;
+            margin-bottom: 0.65rem;
             display: flex;
             align-items: center;
-            gap: 0.4rem;
+            gap: 0.45rem;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }}
+
+        .sources-pills-wrap {{
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
         }}
 
         .source-pill {{
-            background: var(--glass-bg);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            padding: 0.35rem 0.8rem;
-            border-radius: 14px;
-            display: inline-block;
-            margin: 0.25rem 0.4rem 0.25rem 0;
+            background: var(--bg-card);
+            padding: 0.4rem 0.8rem;
+            border-radius: 12px;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
             font-family: 'JetBrains Mono', monospace;
-            font-size: 0.75rem;
-            color: var(--glass-text);
-            border: 1px solid var(--glass-border);
-            box-shadow: var(--glass-shadow);
+            font-size: 0.78rem;
+            color: var(--text-primary);
+            border: 1px solid var(--card-border);
+            box-shadow: var(--clay-shadow-inset);
+            line-height: 1.4;
         }}
 
         /* Input Bar */
@@ -1031,11 +1044,13 @@ async def get_dashboard():
 
                 let sourcesHtml = '';
                 if (data.sources && data.sources.length > 0) {{
-                    sourcesHtml = '<div class="sources-card"><div class="sources-title">Verified Sources:</div>';
+                    sourcesHtml = '<div class="sources-card">';
+                    sourcesHtml += `<div class="sources-title">📚 Verified Grounding Sources (${{data.sources.length}})</div>`;
+                    sourcesHtml += '<div class="sources-pills-wrap">';
                     data.sources.forEach((s, idx) => {{
-                        sourcesHtml += `<span class="source-pill" title="${{escapeHtml(s.snippet)}}">Source ${{idx+1}}: ${{escapeHtml(s.source_file)}} (Chunk ${{s.chunk_id}})</span>`;
+                        sourcesHtml += `<span class="source-pill" title="${{escapeHtml(s.snippet)}}">📄 Source ${{idx+1}}: ${{escapeHtml(s.source_file)}} <strong style="color: var(--clay-sage);">[Chunk ${{s.chunk_id}}]</strong></span> `;
                     }});
-                    sourcesHtml += '</div>';
+                    sourcesHtml += '</div></div>';
                 }}
 
                 const formattedAnswer = formatBotAnswer(data.answer);
@@ -1134,9 +1149,21 @@ async def get_dashboard():
             if (!rawText) return '';
             let text = rawText.trim();
 
-            // Strip robotic negative disclaimers if generated
+            // 1. Strip reasoning and thinking scratchpad tags if present
+            text = text.replace(/<think>[\\s\\S]*?<\\/think>/gi, '');
+            if (text.toLowerCase().includes('thinking process')) {{
+                const answerParts = text.split(/\\n+(?:Final Answer|Answer|Response|Intro(?:ductory paragraph)?):\\s*/i);
+                if (answerParts.length > 1) {{
+                    text = answerParts[answerParts.length - 1];
+                }} else {{
+                    text = text.replace(/^Here's a thinking process:[\\s\\S]*?(?=\\n\\n(?:[A-Z•#]|\\*))/i, '');
+                }}
+            }}
+
+            // 2. Strip robotic negative disclaimers if generated
             text = text.replace(/\\n*No other [^\\n\\.]*(appear|mentioned|found)[^\\n\\.]*\\.?/gi, '');
             text = text.replace(/\\n*No additional [^\\n\\.]*(appear|mentioned|found)[^\\n\\.]*\\.?/gi, '');
+            text = text.trim();
 
             let html = '';
             if (window.marked && typeof marked.parse === 'function') {{
