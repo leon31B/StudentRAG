@@ -1,0 +1,1023 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StudentRAG.com - AI Research & Study Assistant Powered by NVIDIA Nemotron</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-canvas: linear-gradient(135deg, #f7f3ec 0%, #ede5da 45%, #f6efe6 100%);
+            --bg-card: #fcf9f5;
+            --card-border: rgba(255, 255, 255, 0.75);
+            --clay-sage: #95b3a2;
+            --clay-sage-dark: #7a9789;
+            --clay-blue: #9fc0c8;
+            --clay-blue-dark: #81a4ac;
+            --clay-peach: #e8bfa8;
+            --clay-peach-dark: #d2a48d;
+            --clay-cream: #fcf9f5;
+            --text-primary: #283339;
+            --text-secondary: #586771;
+            --text-muted: #8897a2;
+            --accent-sage: #95b3a2;
+            --clay-shadow-panel: 0 24px 48px -12px rgba(125, 110, 95, 0.22), 0 10px 24px -6px rgba(125, 110, 95, 0.12), inset 3px 3px 6px rgba(255, 255, 255, 0.95), inset -4px -4px 9px rgba(175, 160, 145, 0.25);
+            --clay-shadow-btn: 0 12px 24px -6px rgba(95, 115, 105, 0.35), inset 2px 2px 5px rgba(255, 255, 255, 0.8), inset -3px -3px 7px rgba(60, 80, 70, 0.25);
+            --clay-shadow-inset: inset 3px 3px 6px rgba(135, 120, 105, 0.22), inset -2px -2px 5px rgba(255, 255, 255, 0.95);
+            --clay-radius: 28px;
+            --pill-radius: 24px;
+            --glass-bg: rgba(255, 255, 255, 0.6);
+            --glass-border: rgba(255, 255, 255, 0.85);
+            --glass-shadow: 0 12px 36px 0 rgba(140, 125, 110, 0.14), inset 1px 1px 2px rgba(255, 255, 255, 0.9);
+            --glass-text: #283339;
+            --glass-placeholder: rgba(40, 51, 57, 0.55);
+            --hero-glow: rgba(149, 179, 162, 0.25);
+        }
+
+        [data-theme="dark"] {
+            --bg-canvas: radial-gradient(circle at 50% 0%, #151b24 0%, #0a0c10 100%);
+            --bg-card: rgba(22, 27, 34, 0.85);
+            --card-border: rgba(255, 255, 255, 0.12);
+            --clay-sage: #76b900;
+            --clay-sage-dark: #588a00;
+            --clay-blue: #38bdf8;
+            --clay-blue-dark: #0284c7;
+            --clay-peach: #f59e0b;
+            --clay-peach-dark: #d97706;
+            --clay-cream: rgba(22, 27, 34, 0.75);
+            --text-primary: #f0f6fc;
+            --text-secondary: #c9d1d9;
+            --text-muted: #8b949e;
+            --accent-sage: #76b900;
+            --clay-shadow-panel: 0 20px 40px -10px rgba(0, 0, 0, 0.6), inset 1px 1px 2px rgba(255, 255, 255, 0.08);
+            --clay-shadow-btn: 0 8px 24px -4px rgba(118, 185, 0, 0.45), inset 1px 1px 3px rgba(255, 255, 255, 0.3);
+            --clay-shadow-inset: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+            --glass-bg: rgba(255, 255, 255, 0.06);
+            --glass-border: rgba(255, 255, 255, 0.16);
+            --glass-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+            --glass-text: #ffffff;
+            --glass-placeholder: rgba(255, 255, 255, 0.85);
+            --hero-glow: rgba(118, 185, 0, 0.22);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            transition: background 0.25s ease, color 0.2s ease, border-color 0.2s ease, box-shadow 0.25s ease;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-canvas);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            line-height: 1.6;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Floating Foliage Accent Layer */
+        .foliage-layer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+        }
+
+        .leaf {
+            position: absolute;
+            pointer-events: none;
+            opacity: 0.85;
+            filter: drop-shadow(0 20px 30px rgba(100, 115, 105, 0.22));
+            animation: antigravityFloat 9s ease-in-out infinite;
+        }
+
+        .leaf-tl {
+            top: -30px;
+            left: -35px;
+            width: 240px;
+            animation-duration: 10s;
+        }
+
+        .leaf-tr {
+            top: -20px;
+            right: -25px;
+            width: 220px;
+            animation-duration: 12s;
+            animation-delay: -3s;
+        }
+
+        .leaf-bl {
+            bottom: -35px;
+            left: -30px;
+            width: 230px;
+            animation-duration: 11s;
+            animation-delay: -5s;
+        }
+
+        .leaf-br {
+            bottom: -30px;
+            right: -30px;
+            width: 250px;
+            animation-duration: 13s;
+            animation-delay: -2s;
+        }
+
+        @keyframes antigravityFloat {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-14px) rotate(2deg); }
+        }
+
+        /* Ambient Glow behind Hero */
+        .ambient-glow {
+            position: absolute;
+            top: 15%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 650px;
+            height: 450px;
+            background: radial-gradient(circle, var(--hero-glow) 0%, rgba(0,0,0,0) 70%);
+            filter: blur(80px);
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        /* Navigation Header */
+        header {
+            max-width: 1240px;
+            width: 92%;
+            margin: 1.25rem auto 0 auto;
+            background: var(--bg-card);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--card-border);
+            border-radius: var(--pill-radius);
+            box-shadow: var(--clay-shadow-panel);
+            padding: 0.85rem 1.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: relative;
+            z-index: 20;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 0.85rem;
+            text-decoration: none;
+        }
+
+        .logo-badge {
+            background: var(--clay-sage);
+            color: #ffffff;
+            font-weight: 800;
+            font-size: 0.85rem;
+            padding: 0.45rem 0.85rem;
+            border-radius: 16px;
+            letter-spacing: 0.6px;
+            box-shadow: var(--clay-shadow-btn);
+        }
+
+        .brand h1 {
+            font-size: 1.2rem;
+            font-weight: 800;
+            color: var(--text-primary);
+            letter-spacing: -0.3px;
+        }
+
+        .brand span {
+            color: var(--clay-sage);
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 1.8rem;
+            list-style: none;
+        }
+
+        .nav-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.95rem;
+            font-weight: 600;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover {
+            color: var(--clay-sage);
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .theme-toggle-btn {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            color: var(--glass-text);
+            font-family: inherit;
+            font-size: 0.85rem;
+            font-weight: 700;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            cursor: pointer;
+            box-shadow: var(--glass-shadow);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            backdrop-filter: blur(12px);
+        }
+
+        .theme-toggle-btn:hover {
+            transform: translateY(-1px);
+        }
+
+        /* Buttons */
+        .btn {
+            background: var(--clay-sage);
+            color: #ffffff;
+            font-family: inherit;
+            font-weight: 700;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: var(--pill-radius);
+            cursor: pointer;
+            text-decoration: none;
+            box-shadow: var(--clay-shadow-btn);
+            transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 14px 28px -4px rgba(118, 185, 0, 0.45);
+        }
+
+        .btn:active {
+            transform: translateY(2px) scale(0.97);
+        }
+
+        .btn-hero-cta {
+            background: var(--clay-sage);
+            color: #ffffff;
+            font-size: 1.15rem;
+            font-weight: 800;
+            padding: 1.15rem 2.5rem;
+            border-radius: 32px;
+            text-decoration: none;
+            box-shadow: 0 12px 30px -4px rgba(118, 185, 0, 0.5), inset 2px 2px 4px rgba(255, 255, 255, 0.4);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.75rem;
+            transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-hero-cta:hover {
+            transform: translateY(-3px) scale(1.03);
+            box-shadow: 0 18px 40px -4px rgba(118, 185, 0, 0.65), inset 2px 2px 5px rgba(255, 255, 255, 0.6);
+        }
+
+        .btn-hero-cta .arrow {
+            transition: transform 0.2s ease;
+        }
+
+        .btn-hero-cta:hover .arrow {
+            transform: translateX(4px);
+        }
+
+        .btn-secondary {
+            background: var(--glass-bg);
+            color: var(--glass-text);
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--glass-shadow);
+            backdrop-filter: blur(16px);
+            font-weight: 700;
+            padding: 1.15rem 2rem;
+            border-radius: 32px;
+            font-size: 1.05rem;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.6rem;
+            transition: all 0.2s ease;
+        }
+
+        .btn-secondary:hover {
+            transform: translateY(-2px);
+            background: rgba(255, 255, 255, 0.12);
+        }
+
+        /* Container */
+        .container {
+            max-width: 1240px;
+            width: 92%;
+            margin: 0 auto;
+            position: relative;
+            z-index: 10;
+        }
+
+        /* Hero Section */
+        .hero {
+            padding: 5rem 0 4rem 0;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .badge-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--glass-shadow);
+            backdrop-filter: blur(16px);
+            padding: 0.45rem 1.15rem;
+            border-radius: 30px;
+            font-size: 0.88rem;
+            font-weight: 700;
+            color: var(--glass-text);
+            margin-bottom: 2rem;
+        }
+
+        .badge-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--clay-sage);
+            box-shadow: 0 0 10px var(--clay-sage);
+        }
+
+        .hero h1 {
+            font-size: 3.8rem;
+            font-weight: 800;
+            line-height: 1.12;
+            letter-spacing: -1.5px;
+            max-width: 950px;
+            margin-bottom: 1.5rem;
+        }
+
+        .hero h1 span.gradient-text {
+            color: var(--clay-sage);
+            background: linear-gradient(135deg, var(--clay-sage) 0%, #38bdf8 100%);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero p.lead {
+            font-size: 1.25rem;
+            color: var(--text-secondary);
+            max-width: 780px;
+            line-height: 1.7;
+            margin-bottom: 2.75rem;
+        }
+
+        .hero-actions {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1.25rem;
+            flex-wrap: wrap;
+            margin-bottom: 3.5rem;
+        }
+
+        /* Stats Ribbon */
+        .stats-ribbon {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.25rem;
+            width: 100%;
+            max-width: 1050px;
+            margin-bottom: 5rem;
+        }
+
+        .stat-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 1.4rem 1rem;
+            box-shadow: var(--glass-shadow);
+            text-align: center;
+        }
+
+        .stat-card .stat-number {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--clay-sage);
+            margin-bottom: 0.25rem;
+        }
+
+        .stat-card .stat-label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        /* Interactive Studio Preview Card */
+        .preview-wrapper {
+            width: 100%;
+            max-width: 1050px;
+            margin-bottom: 6rem;
+            perspective: 1000px;
+        }
+
+        .preview-card {
+            background: var(--bg-card);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--card-border);
+            border-radius: var(--clay-radius);
+            box-shadow: var(--clay-shadow-panel);
+            padding: 2rem;
+            text-align: left;
+            position: relative;
+        }
+
+        .preview-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-bottom: 1.25rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 1.5rem;
+        }
+
+        .preview-dots {
+            display: flex;
+            gap: 0.45rem;
+        }
+
+        .preview-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .preview-dot.red { background: #ff5f56; }
+        .preview-dot.yellow { background: #ffbd2e; }
+        .preview-dot.green { background: #27c93f; }
+
+        .preview-tag {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--clay-sage);
+            background: rgba(118, 185, 0, 0.12);
+            padding: 0.3rem 0.75rem;
+            border-radius: 12px;
+            border: 1px solid rgba(118, 185, 0, 0.3);
+        }
+
+        .chat-sample {
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+        }
+
+        .chat-sample-user {
+            align-self: flex-end;
+            background: var(--clay-blue);
+            color: #1e293b;
+            padding: 0.95rem 1.4rem;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            max-width: 75%;
+            box-shadow: 0 10px 20px rgba(56, 189, 248, 0.2);
+        }
+
+        .chat-sample-bot {
+            align-self: flex-start;
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            border-left: 5px solid var(--clay-sage);
+            border-radius: 20px;
+            padding: 1.25rem 1.5rem;
+            color: var(--glass-text);
+            max-width: 88%;
+            box-shadow: var(--glass-shadow);
+        }
+
+        .chat-sample-bot p {
+            margin-bottom: 0.75rem;
+            font-size: 0.95rem;
+            line-height: 1.65;
+        }
+
+        .citation-chip {
+            display: inline-flex;
+            align-items: center;
+            background: rgba(118, 185, 0, 0.16);
+            color: var(--clay-sage);
+            border: 1px solid rgba(118, 185, 0, 0.4);
+            font-size: 0.75rem;
+            padding: 0.15rem 0.55rem;
+            border-radius: 10px;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+            margin: 0 0.2rem;
+        }
+
+        /* Features Section */
+        .section-title-wrap {
+            text-align: center;
+            margin-bottom: 3.5rem;
+        }
+
+        .section-tag {
+            color: var(--clay-sage);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            margin-bottom: 0.75rem;
+            display: block;
+        }
+
+        .section-title {
+            font-size: 2.5rem;
+            font-weight: 800;
+            letter-spacing: -0.8px;
+            color: var(--text-primary);
+            margin-bottom: 1rem;
+        }
+
+        .section-desc {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            max-width: 650px;
+            margin: 0 auto;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.75rem;
+            margin-bottom: 6rem;
+        }
+
+        .feature-card {
+            background: var(--bg-card);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--card-border);
+            border-radius: var(--clay-radius);
+            padding: 2.25rem 1.85rem;
+            box-shadow: var(--clay-shadow-panel);
+            transition: all 0.25s ease;
+            position: relative;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-6px);
+            border-color: var(--clay-sage);
+        }
+
+        .feature-icon {
+            width: 56px;
+            height: 56px;
+            border-radius: 18px;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--glass-shadow);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.6rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .feature-card h3 {
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-bottom: 0.75rem;
+            color: var(--text-primary);
+        }
+
+        .feature-card p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            line-height: 1.65;
+        }
+
+        /* How it Works */
+        .steps-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+            margin-bottom: 6rem;
+            position: relative;
+        }
+
+        .step-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--clay-radius);
+            padding: 2.5rem 1.8rem;
+            box-shadow: var(--glass-shadow);
+            position: relative;
+            text-align: left;
+        }
+
+        .step-number {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 2.5rem;
+            font-weight: 900;
+            color: var(--clay-sage);
+            opacity: 0.8;
+            margin-bottom: 1rem;
+        }
+
+        .step-card h3 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 0.65rem;
+            color: var(--glass-text);
+        }
+
+        .step-card p {
+            color: var(--text-secondary);
+            font-size: 0.92rem;
+            line-height: 1.6;
+        }
+
+        /* CTA Banner */
+        .cta-banner {
+            background: var(--bg-card);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--card-border);
+            border-radius: 36px;
+            box-shadow: var(--clay-shadow-panel);
+            padding: 4.5rem 3rem;
+            text-align: center;
+            margin-bottom: 6rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cta-banner h2 {
+            font-size: 3rem;
+            font-weight: 800;
+            letter-spacing: -1px;
+            margin-bottom: 1.25rem;
+            color: var(--text-primary);
+        }
+
+        .cta-banner p {
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+            max-width: 650px;
+            margin: 0 auto 2.75rem auto;
+            line-height: 1.65;
+        }
+
+        /* Footer */
+        footer {
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 2.5rem 0 3rem 0;
+            position: relative;
+            z-index: 10;
+        }
+
+        .footer-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 1.5rem;
+        }
+
+        .footer-text {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        /* Responsive Breakpoints */
+        @media (max-width: 1024px) {
+            .hero h1 { font-size: 2.8rem; }
+            .features-grid, .steps-grid { grid-template-columns: repeat(2, 1fr); }
+            .stats-ribbon { grid-template-columns: repeat(2, 1fr); }
+            .nav-links { display: none; }
+        }
+
+        @media (max-width: 640px) {
+            .hero h1 { font-size: 2.2rem; }
+            .features-grid, .steps-grid { grid-template-columns: 1fr; }
+            .stats-ribbon { grid-template-columns: 1fr; }
+            .cta-banner h2 { font-size: 2.2rem; }
+            .hero-actions { flex-direction: column; width: 100%; }
+            .btn-hero-cta, .btn-secondary { width: 100%; justify-content: center; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Floating Foliage Accent Layer -->
+    <div class="foliage-layer" aria-hidden="true">
+        <!-- Top Left Monstera -->
+        <svg class="leaf leaf-tl" viewBox="0 0 200 240" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <linearGradient id="monstera1" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#95b3a2"/>
+                    <stop offset="100%" stop-color="#6e8f7e"/>
+                </linearGradient>
+            </defs>
+            <path d="M100 230 C98 170 102 110 98 10 C125 25 180 75 190 135 C198 175 180 215 145 230 C125 238 110 235 100 230 Z" fill="url(#monstera1)"/>
+            <path d="M100 230 C102 170 98 110 102 10 C75 25 20 75 10 135 C2 175 20 215 55 230 C75 238 90 235 100 230 Z" fill="url(#monstera1)"/>
+            <ellipse cx="140" cy="110" rx="10" ry="25" transform="rotate(35 140 110)" fill="#f6efe6"/>
+            <ellipse cx="60" cy="110" rx="10" ry="25" transform="rotate(-35 60 110)" fill="#f6efe6"/>
+        </svg>
+
+        <!-- Top Right Palm Branch -->
+        <svg class="leaf leaf-tr" viewBox="0 0 200 220" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <linearGradient id="palm1" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#a4c2b2"/>
+                    <stop offset="100%" stop-color="#779986"/>
+                </linearGradient>
+            </defs>
+            <path d="M190 10 C120 70 60 140 10 210" stroke="#779986" stroke-width="3" stroke-linecap="round"/>
+            <path d="M170 30 C130 30 80 50 50 85 C80 75 130 65 170 30 Z" fill="url(#palm1)"/>
+            <path d="M140 65 C100 70 55 95 30 130 C60 115 105 100 140 65 Z" fill="url(#palm1)"/>
+            <path d="M110 105 C75 115 35 145 15 185 C45 165 85 145 110 105 Z" fill="url(#palm1)"/>
+        </svg>
+
+        <!-- Bottom Left Palm Branch -->
+        <svg class="leaf leaf-bl" viewBox="0 0 200 220" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <linearGradient id="palm2" x1="0%" y1="100%" x2="100%" y2="0%">
+                    <stop offset="0%" stop-color="#95b3a2"/>
+                    <stop offset="100%" stop-color="#709180"/>
+                </linearGradient>
+            </defs>
+            <path d="M10 210 C70 140 130 70 190 10" stroke="#709180" stroke-width="3" stroke-linecap="round"/>
+            <path d="M30 180 C60 180 110 160 140 125 C110 135 60 145 30 180 Z" fill="url(#palm2)"/>
+            <path d="M60 145 C95 140 140 115 165 80 C135 95 90 110 60 145 Z" fill="url(#palm2)"/>
+        </svg>
+
+        <!-- Bottom Right Monstera -->
+        <svg class="leaf leaf-br" viewBox="0 0 200 240" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M100 230 C98 170 102 110 98 10 C125 25 180 75 190 135 C198 175 180 215 145 230 C125 238 110 235 100 230 Z" fill="url(#monstera1)"/>
+            <path d="M100 230 C102 170 98 110 102 10 C75 25 20 75 10 135 C2 175 20 215 55 230 C75 238 90 235 100 230 Z" fill="url(#monstera1)"/>
+        </svg>
+    </div>
+
+    <div class="ambient-glow"></div>
+
+    <!-- Navigation Header -->
+    <header>
+        <a href="#" class="brand">
+            <div class="logo-badge">NVIDIA</div>
+            <h1>Welcome to <span>StudentRAG.com</span></h1>
+        </a>
+
+        <ul class="nav-links">
+            <li><a href="#features">Features</a></li>
+            <li><a href="#how-it-works">How It Works</a></li>
+            <li><a href="#architecture">Architecture</a></li>
+        </ul>
+
+        <div class="header-actions">
+            <button class="theme-toggle-btn" onclick="toggleTheme()" title="Toggle Theme">
+                <span id="theme-icon">🌿</span> <span id="theme-label">Pastel Clay</span>
+            </button>
+            <a href="http://localhost:8000" class="btn">Try Now ⚡</a>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- Hero Section -->
+        <section class="hero">
+            <div class="badge-pill">
+                <div class="badge-dot"></div>
+                Powered by NVIDIA Nemotron-3.5-Embed-1B & Nemotron 30B LLM
+            </div>
+
+            <h1>Master Any Subject with <span class="gradient-text">Zero-Hallucination</span> Academic AI</h1>
+
+            <p class="lead">
+                Upload textbooks, lecture PDFs, research papers, and technical guides. Ask deep conceptual questions and receive mathematically grounded answers with verified citations and 2048-dimensional dense semantic vectors.
+            </p>
+
+            <div class="hero-actions">
+                <a href="http://localhost:8000" class="btn-hero-cta">
+                    Try Now ⚡ <span class="arrow">→</span>
+                </a>
+                <a href="#features" class="btn-secondary">
+                    Explore Architecture 📚
+                </a>
+            </div>
+
+            <!-- Stats Ribbon -->
+            <div class="stats-ribbon">
+                <div class="stat-card">
+                    <div class="stat-number">2,048</div>
+                    <div class="stat-label">Vector Dimensions (MRL)</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">32,768</div>
+                    <div class="stat-label">Token Context Window</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">100%</div>
+                    <div class="stat-label">Verified Citations</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">0.0 ms</div>
+                    <div class="stat-label">Local FAISS Latency</div>
+                </div>
+            </div>
+
+            <!-- Live Interface Mockup -->
+            <div class="preview-wrapper">
+                <div class="preview-card">
+                    <div class="preview-header">
+                        <div class="preview-dots">
+                            <div class="preview-dot red"></div>
+                            <div class="preview-dot yellow"></div>
+                            <div class="preview-dot green"></div>
+                        </div>
+                        <div class="preview-tag">STUDENTRAG_STUDIO_V1.0 // LIVE_FAISS_SESSION</div>
+                    </div>
+
+                    <div class="chat-sample">
+                        <div class="chat-sample-user">
+                            How does Asymmetric Retrieval prevent semantic drift in study materials?
+                        </div>
+                        <div class="chat-sample-bot">
+                            <p>
+                                <strong>NVIDIA Nemotron-3.5-Embed-1B</strong> utilizes specialized dual projection heads for <em>asymmetric retrieval</em>:
+                            </p>
+                            <p>
+                                When indexing textbooks or research papers, text chunks are embedded under the <code>passage</code> role. When you ask a question, the input is transformed via the <code>query</code> role into the shared 2048-dimensional semantic manifold. This guarantees that short questions align tightly with comprehensive textbook paragraphs without loss of context.
+                            </p>
+                            <div style="margin-top: 0.85rem; padding-top: 0.75rem; border-top: 1px dashed rgba(255, 255, 255, 0.15);">
+                                <span style="font-size: 0.82rem; font-weight: 700; color: var(--clay-sage);">Grounding Sources:</span>
+                                <span class="citation-chip">Source 1: nvidia_nemotron_3_5.md (Score: 0.1824)</span>
+                                <span class="citation-chip">Source 2: rag_best_practices.md (Score: 0.2319)</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Features Grid -->
+        <section id="features" style="padding: 2rem 0 4rem 0;">
+            <div class="section-title-wrap">
+                <span class="section-tag">ENGINEERED FOR SCHOLARS</span>
+                <h2 class="section-title">Built for Serious Study & Research</h2>
+                <p class="section-desc">Experience enterprise-grade retrieval precision tailored for academic workflows, complex formulas, and deep documentation.</p>
+            </div>
+
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">📑</div>
+                    <h3>Multi-Document Ingestion</h3>
+                    <p>Drop multi-hundred page PDF textbooks, research publications, Markdown study notes, or lecture slide dumps directly into the knowledge base.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">🎯</div>
+                    <h3>Asymmetric Query Head</h3>
+                    <p>Powered by Nemotron-3.5-Embed-1B's distinct query and passage encoders, ensuring your questions map accurately to technical paragraphs.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">🛡️</div>
+                    <h3>Anti-Hallucination Citations</h3>
+                    <p>Every response synthesized by the LLM is anchored by verified citation chips displaying source filenames, chunks, and exact L2 distances.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">⚡</div>
+                    <h3>Local FAISS Vector Engine</h3>
+                    <p>High-efficiency dense semantic index stored directly on your computer. Zero latency bottleneck, persistent disk storage, and absolute privacy.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">📐</div>
+                    <h3>Matryoshka MRL Scalability</h3>
+                    <p>Supports flexible vector truncation down to 1024 or 512 dimensions while retaining over 98% retrieval fidelity for ultra-low memory footprints.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">🌿</div>
+                    <h3>Claymorphic & Dark Themes</h3>
+                    <p>Thoughtfully crafted organic aesthetics with warm pastel clay tones and cyber dark modes to keep your eyes comfortable during long study sessions.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- How it Works -->
+        <section id="how-it-works" style="padding: 2rem 0 4rem 0;">
+            <div class="section-title-wrap">
+                <span class="section-tag">SIMPLE 3-STEP WORKFLOW</span>
+                <h2 class="section-title">From Raw Syllabus to Deep Mastery</h2>
+                <p class="section-desc">Get started in seconds with zero complicated machine learning setup.</p>
+            </div>
+
+            <div class="steps-grid">
+                <div class="step-card">
+                    <div class="step-number">01</div>
+                    <h3>Ingest Documents</h3>
+                    <p>Drag and drop your syllabus, homework assignments, papers, or textbooks into the Ingestion zone or test with our pre-loaded knowledge base.</p>
+                </div>
+
+                <div class="step-card">
+                    <div class="step-number">02</div>
+                    <h3>Vectorize with Nemotron</h3>
+                    <p>The pipeline automatically chunks your documents with 150-token semantic overlap and generates 2048-dim embeddings via NVIDIA AI endpoints.</p>
+                </div>
+
+                <div class="step-card">
+                    <div class="step-number">03</div>
+                    <h3>Ask & Understand</h3>
+                    <p>Interact with the Q&A studio, inspect similarity scores, view exact citation previews, and generate synthesis notes with zero hallucinations.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- CTA Banner -->
+        <section class="cta-banner">
+            <h2>Ready to Transform Your Study Workflow?</h2>
+            <p>Launch the interactive StudentRAG studio now and experience the cutting edge of NVIDIA Nemotron-3.5 neural retrieval.</p>
+            <a href="http://localhost:8000" class="btn-hero-cta">
+                Try Now ⚡ <span class="arrow">→</span>
+            </a>
+        </section>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container footer-content">
+            <div class="brand">
+                <div class="logo-badge">NVIDIA</div>
+                <div style="font-weight: 700; font-size: 1.1rem; color: var(--text-primary);">Welcome to <span style="color: var(--clay-sage);">StudentRAG.com</span></div>
+            </div>
+            <div class="footer-text">
+                Powered by NVIDIA AI Foundation Models • LangChain • FAISS • Python 3.13
+            </div>
+            <div>
+                <a href="http://localhost:8000" class="btn" style="padding: 0.6rem 1.4rem;">Launch Studio</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Shared Theme Toggle Logic - Always start in Light Theme (Pastel Clay) 1st on load
+        function initTheme() {
+            document.body.removeAttribute('data-theme');
+            const icon = document.getElementById('theme-icon');
+            const label = document.getElementById('theme-label');
+            if (icon) icon.innerText = '🌿';
+            if (label) label.innerText = 'Pastel Clay';
+            localStorage.setItem('nemotron_theme', 'light');
+        }
+
+        function toggleTheme() {
+            const isDark = document.body.getAttribute('data-theme') === 'dark';
+            if (isDark) {
+                document.body.removeAttribute('data-theme');
+                localStorage.setItem('nemotron_theme', 'light');
+                document.getElementById('theme-icon').innerText = '🌿';
+                document.getElementById('theme-label').innerText = 'Pastel Clay';
+            } else {
+                document.body.setAttribute('data-theme', 'dark');
+                localStorage.setItem('nemotron_theme', 'dark');
+                document.getElementById('theme-icon').innerText = '🌙';
+                document.getElementById('theme-label').innerText = 'Cyber Dark';
+            }
+        }
+
+        window.addEventListener('DOMContentLoaded', initTheme);
+    </script>
+</body>
+</html>

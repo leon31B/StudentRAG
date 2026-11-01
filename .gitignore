@@ -1,0 +1,27 @@
+# Environment & Secret Variables
+.env
+.env.local
+
+# Python caches & bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual environments
+venv/
+env/
+.venv/
+
+# IDE & Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+
+# Vector store cache (optional: ignore local persistent index if you don't want to push binary vectors)
+data/faiss_index/
